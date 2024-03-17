@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
+import {CouchbaseVectorStore, CouchbaseVectorStoreArgs} from "@langchain/community/vectorstores/couchbase";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { createCouchbaseCluster } from "@/lib/couchbase-connection";
 
 export async function POST(request: Request) {
   const data = await request.formData();
@@ -19,7 +22,30 @@ export async function POST(request: Request) {
     });
     const docs = await textSplitter.splitDocuments(rawDocs);
 
-    console.log(docs[0]);
+    const embeddings = new OpenAIEmbeddings({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+    });
+    
+    const bucketName = process.env.DB_BUCKET || "";
+    const scopeName = process.env.DB_SCOPE || "";
+    const collectionName = process.env.DB_COLLECTION || "";
+    const indexName = process.env.INDEX_NAME || ""
+    const textKey = "text"
+    const embeddingKey = "embedding"
+    const scopedIndex = true;
+
+    const cluster = await createCouchbaseCluster();
+    const couchbaseConfig: CouchbaseVectorStoreArgs = {
+        cluster,
+        bucketName,
+        scopeName,
+        collectionName,
+        indexName,
+        textKey,
+        embeddingKey,
+        scopedIndex
+    }
+    await CouchbaseVectorStore.fromDocuments(docs,embeddings,couchbaseConfig);
 
     console.log("creating vector store...");
   } catch (error) {

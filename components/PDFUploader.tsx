@@ -1,8 +1,11 @@
 "use client";
+
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { NextRouter } from "next/router";
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-const PDFUploader = () => {
+const PDFUploader = ({ router }: { router: NextRouter }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const onDrop = useCallback((acceptedFiles: File[]) => {
     console.log(acceptedFiles[0]);
@@ -26,11 +29,18 @@ const PDFUploader = () => {
     }
     const data = new FormData();
     data.set("file", selectedFile);
+
     const response = await fetch("/api/ingestPdf", {
       method: "POST",
       body: data,
     });
     console.log(response);
+    router.push({
+      pathname: "/chatPage",
+      query: {
+        response: await response.json(),
+      },
+    });
   };
 
   return (

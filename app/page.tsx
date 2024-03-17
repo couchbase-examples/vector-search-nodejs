@@ -86,7 +86,7 @@ export default function Home({ docsList }: { docsList: any }) {
             Ingesting your PDF...
           </button>
         ) : (
-          <PDFUploader />
+          <PDFUploader router={router}/>
         )}
       </div>
     </div>
