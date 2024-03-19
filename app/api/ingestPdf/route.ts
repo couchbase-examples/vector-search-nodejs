@@ -4,15 +4,24 @@ import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import {CouchbaseVectorStore, CouchbaseVectorStoreArgs} from "@langchain/community/vectorstores/couchbase";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { createCouchbaseCluster } from "@/lib/couchbase-connection";
+import { writeFile } from "fs/promises";
+import path from "path";
 
 export async function POST(request: Request) {
   const data = await request.formData();
   const file: File | null = data.get("file") as unknown as File;
+  let fileUInt8Array;
   try {
     const bytes = await file.arrayBuffer();
-    const buffer2 = Buffer.from(bytes);
+    fileUInt8Array = new Uint8Array(bytes);
+    const buffer = Buffer.from(bytes);
 
-    const loader = new PDFLoader(new Blob([buffer2]));
+    await writeFile(
+      path.join(process.cwd(), "public/assets/" + file.name),
+      buffer
+    );
+
+    const loader = new PDFLoader(new Blob([buffer]));
     const rawDocs = await loader.load();
 
     /* Split text into chunks */
@@ -56,5 +65,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     text: "Successfully embedded pdf",
     id: "1",
+    fileName: file.name,
   });
 }

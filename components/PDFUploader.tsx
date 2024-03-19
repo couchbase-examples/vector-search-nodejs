@@ -1,11 +1,25 @@
 "use client";
 
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { useRouter, useSearchParams } from "next/navigation";
 import { NextRouter } from "next/router";
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
-const PDFUploader = ({ router }: { router: NextRouter }) => {
+const PDFUploader = () => {
+  const router =  useRouter();
+  const searchParams = useSearchParams()
+
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set(name, value)
+  
+      return params.toString()
+    },
+    [searchParams]
+  )
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const onDrop = useCallback((acceptedFiles: File[]) => {
     console.log(acceptedFiles[0]);
@@ -34,13 +48,12 @@ const PDFUploader = ({ router }: { router: NextRouter }) => {
       method: "POST",
       body: data,
     });
-    console.log(response);
-    router.push({
-      pathname: "/chatPage",
-      query: {
-        response: await response.json(),
-      },
-    });
+
+    const jsonResp = await response.json();
+    console.log(jsonResp);
+
+    router.push(
+     "/chatPage" + "?" + createQueryString("fileName", jsonResp.fileName));
   };
 
   return (

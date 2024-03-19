@@ -1,51 +1,11 @@
 'use client';
 
-import { useDropzone } from "react-dropzone";
-import { useRouter } from 'next/navigation';
-// import DocIcon from '@/components/ui/DocIcon';
-import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useState } from 'react';
 import PDFUploader from "@/components/PDFUploader";
 
 export default function Home({ docsList }: { docsList: any }) {
-  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-
-  // const UploadDropZone = () => (
-  //   // <UploadDropzone
-  //   //   uploader={uploader}
-  //   //   options={options}
-  //   //   onUpdate={(file) => {
-  //   //     if (file.length !== 0) {
-  //   //       setLoading(true);
-  //   //       ingestPdf(
-  //   //         file[0].fileUrl,
-  //   //         file[0].originalFile.originalFileName || file[0].filePath,
-  //   //       );
-  //   //     }
-  //   //   }}
-  //   //   width="470px"
-  //   //   height="250px"
-  //   // />
-
-  // );
-
-  async function ingestPdf(fileUrl: string, fileName: string) {
-    let res = await fetch('/api/ingestPdf', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        fileUrl,
-        fileName,
-      }),
-    });
-
-    let data = await res.json();
-    router.push(`/document/${data.id}`);
-  }
 
   return (
     <div className="mx-auto flex flex-col gap-4 container mt-10">
@@ -86,7 +46,7 @@ export default function Home({ docsList }: { docsList: any }) {
             Ingesting your PDF...
           </button>
         ) : (
-          <PDFUploader router={router}/>
+          <PDFUploader />
         )}
       </div>
     </div>
