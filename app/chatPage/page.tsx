@@ -10,20 +10,25 @@ import { toolbarPlugin } from "@react-pdf-viewer/toolbar";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import path from "path";
-import Image from 'next/image';
+import Image from "next/image";
 import { useChat } from "ai/react";
 import ReactMarkdown from "react-markdown";
 import LoadingDots from "@/components/LoadingDots";
+import "@react-pdf-viewer/core/lib/styles/index.css";
+import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 const ChatPage = () => {
   const [chatOnlyView, setChatOnlyView] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
   const toolbarPluginInstance = toolbarPlugin();
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const { renderDefaultToolbar, Toolbar } = toolbarPluginInstance;
   const searchParams = useSearchParams();
-  const pdfUrl = path.join("/assets/" + searchParams.get("fileName") as string)
-  console.log(pdfUrl);
+  useEffect(() => {
+    setPdfUrl(("/assets/" + searchParams.get("fileName")) as string);
+  }, [searchParams]);
+
   const transform: TransformToolbarSlot = (slot: ToolbarSlot) => ({
     ...slot,
     Download: () => <></>,
@@ -32,22 +37,22 @@ const ChatPage = () => {
   });
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
-      api: '/api/chat',
+      api: "/api/chat",
       body: {
         chatId: "chatId",
       },
-      onResponse(response) {
-        // const sourcesHeader = response.headers.get('x-sources');
-        // const sources = sourcesHeader ? JSON.parse(atob(sourcesHeader)) : [];
+      // onResponse(response) {
+      // const sourcesHeader = response.headers.get('x-sources');
+      // const sources = sourcesHeader ? JSON.parse(atob(sourcesHeader)) : [];
 
-        // const messageIndexHeader = response.headers.get('x-message-index');
-        // if (sources.length && messageIndexHeader !== null) {
-        //   setSourcesForMessages({
-        //     ...sourcesForMessages,
-        //     [messageIndexHeader]: sources,
-        //   });
-        // }
-      },
+      // const messageIndexHeader = response.headers.get('x-message-index');
+      // if (sources.length && messageIndexHeader !== null) {
+      //   setSourcesForMessages({
+      //     ...sourcesForMessages,
+      //     [messageIndexHeader]: sources,
+      //   });
+      // }
+      // },
       onError: (e) => {
         setError(e.message);
       },
@@ -63,9 +68,9 @@ const ChatPage = () => {
 
   // Prevent empty chat submissions
   const handleEnter = (e: any) => {
-    if (e.key === 'Enter' && messages) {
+    if (e.key === "Enter" && messages) {
       handleSubmit(e);
-    } else if (e.key == 'Enter') {
+    } else if (e.key == "Enter") {
       e.preventDefault();
     }
   };
@@ -87,12 +92,11 @@ const ChatPage = () => {
             >
               <Toolbar>{renderDefaultToolbar(transform)}</Toolbar>
             </div>
-            {pdfUrl && (
-              <Viewer
-                fileUrl={pdfUrl}
-                plugins={[toolbarPluginInstance, pageNavigationPluginInstance]}
-              />
-            )}
+
+            <Viewer
+              fileUrl={pdfUrl}
+              plugins={[toolbarPluginInstance, pageNavigationPluginInstance]}
+            />
           </div>
         </Worker>
         <div className="flex flex-col w-full justify-between align-center h-[90vh] no-scrollbar">
@@ -110,7 +114,7 @@ const ChatPage = () => {
                 </div>
               )}
               {messages.map((message, index) => {
-               // const sources = sourcesForMessages[index] || undefined;
+                // const sources = sourcesForMessages[index] || undefined;
                 const isLastMessage =
                   !isLoading && index === messages.length - 1;
                 const previousMessages = index !== messages.length - 1;
@@ -118,23 +122,23 @@ const ChatPage = () => {
                   <div key={`chatMessage-${index}`}>
                     <div
                       className={`p-4 text-black animate ${
-                        message.role === 'assistant'
-                          ? 'bg-gray-100'
+                        message.role === "assistant"
+                          ? "bg-gray-100"
                           : isLoading && index === messages.length - 1
-                          ? 'animate-pulse bg-white'
-                          : 'bg-white'
+                          ? "animate-pulse bg-white"
+                          : "bg-white"
                       }`}
                     >
                       <div className="flex">
                         <Image
                           key={index}
                           src={
-                            message.role === 'assistant'
-                              ? '/images/bot-icon.png'
+                            message.role === "assistant"
+                              ? "/images/bot-icon.png"
                               : "/images/couchbase.svg"
                           }
                           alt="profile image"
-                          width={message.role === 'assistant' ? '35' : '33'}
+                          width={message.role === "assistant" ? "35" : "33"}
                           height="30"
                           className="mr-4 rounded-sm h-full"
                           priority
@@ -197,7 +201,7 @@ const ChatPage = () => {
                 id="userInput"
                 name="userInput"
                 placeholder={
-                  isLoading ? 'Waiting for response...' : 'Ask me anything...'
+                  isLoading ? "Waiting for response..." : "Ask me anything..."
                 }
               />
               <button
