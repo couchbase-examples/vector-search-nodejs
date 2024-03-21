@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## RAG Demo using Couchbase, NextJS, Langchain, and OpenAI
 
-## Getting Started
+This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model.
 
-First, run the development server:
+### How does it work?
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+You can upload your PDFs with custom data & ask questions about the data in the chat box.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+For each question, you will get an answer using RAG (Couchbase logo)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+For RAG, we are using Langchain, Couchbase Vector Search & OpenAI. We fetch parts of the PDF relevant to the question using Vector search & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### How to Run
 
-## Learn More
+- #### Install dependencies
 
-To learn more about Next.js, take a look at the following resources:
+  `npm install`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- #### Set the environment secrets
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+  Copy the `.env.template` file in and rename it to `.env` (`.env.local` in case of local development) and replace the placeholders with the actual values for your environment
 
-## Deploy on Vercel
+  ```
+  OPENAI_API_KEY=<open_ai_api_key>
+  DB_CONN_STR=<connection_string_for_couchbase_cluster>
+  DB_USERNAME=<username_for_couchbase_cluster>
+  DB_PASSWORD=<password_for_couchbase_cluster>
+  DB_BUCKET=<name_of_bucket_to_store_documents>
+  DB_SCOPE=<name_of_scope_to_store_documents>
+  DB_COLLECTION=<name_of_collection_to_store_documents>
+  INDEX_NAME=<name_of_fts_index_with_vector_support>
+  ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- #### Create the Search Index on Full Text Service
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+  We need to create the Search Index on the Full Text Service in Couchbase. For this demo, you can import the following index using the instructions.
+
+  - [Couchbase Capella](https://docs.couchbase.com/cloud/search/import-search-index.html)
+
+    - Copy the index definition to a new file index.json
+    - Import the file in Capella using the instructions in the documentation.
+    - Click on Create Index to create the index.
+
+  - [Couchbase Server](https://docs.couchbase.com/server/current/search/import-search-index.html)
+
+    - Click on Search -> Add Index -> Import
+    - Copy the following Index definition in the Import screen
+    - Click on Create Index to create the index.
+
+  #### Index Definition
+
+  Here, we are creating the index `pdf_search` on the documents in the `docs` collection within the `shared` scope in the bucket `pdf-docs`. The Vector field is set to `embeddings` with 1536 dimensions and the text field set to `text`. We are also indexing and storing all the fields under `metadata` in the document as a dynamic mapping to account for varying document structures. The similarity metric is set to dot_product. If there is a change in these parameters, please adapt the index accordingly.
+
+  ```
+  {
+    "name": "pdf_search",
+    "type": "fulltext-index",
+    "params": {
+        "doc_config": {
+            "docid_prefix_delim": "",
+            "docid_regexp": "",
+            "mode": "scope.collection.type_field",
+            "type_field": "type"
+        },
+        "mapping": {
+            "default_analyzer": "standard",
+            "default_datetime_parser": "dateTimeOptional",
+            "default_field": "_all",
+            "default_mapping": {
+                "dynamic": true,
+                "enabled": false
+            },
+            "default_type": "_default",
+            "docvalues_dynamic": false,
+            "index_dynamic": true,
+            "store_dynamic": false,
+            "type_field": "_type",
+            "types": {
+                "shared.docs": {
+                    "dynamic": true,
+                    "enabled": true,
+                    "properties": {
+                        "embedding": {
+                            "enabled": true,
+                            "dynamic": false,
+                            "fields": [
+                                {
+                                    "dims": 1536,
+                                    "index": true,
+                                    "name": "embedding",
+                                    "similarity": "dot_product",
+                                    "type": "vector",
+                                    "vector_index_optimized_for": "recall"
+                                }
+                            ]
+                        },
+                        "text": {
+                            "enabled": true,
+                            "dynamic": false,
+                            "fields": [
+                                {
+                                    "index": true,
+                                    "name": "text",
+                                    "store": true,
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "store": {
+            "indexType": "scorch",
+            "segmentVersion": 16
+        }
+    },
+    "sourceType": "gocbcore",
+    "sourceName": "pdf-docs",
+    "sourceParams": {},
+    "planParams": {
+        "maxPartitionsPerPIndex": 64,
+        "indexPartitions": 16,
+        "numReplicas": 0
+    }
+  }
+  ```
+
+- #### Run the application locally
+
+  `npm run dev`
