@@ -51,7 +51,7 @@ export const InfoCard = () => (
           This code for this demo is open source - you can see the source code, learn more about using couchbase vector store and deploy
           your own version{" "}
           <a
-            href="https://github.com/couchbase-examples/vector-search-nextjs"
+            href="https://github.com/couchbase-examples/vector-search-nodejs"
             target="_blank"
             className="text-blue-500"
           >
