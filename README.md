@@ -2,6 +2,8 @@
 
 This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model.
 
+![alt text](public/images/demo.png)
+
 ### How does it work?
 
 You can upload your PDFs with custom data & ask questions about the data in the chat box.
