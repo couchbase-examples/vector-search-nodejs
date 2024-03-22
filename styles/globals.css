@@ -85,3 +85,19 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #d9d9d9;
 }
+
+.loader {
+  animation-name: spin;
+  animation-duration: 500ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -3,24 +3,26 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useRouter, useSearchParams } from "next/navigation";
 import { NextRouter } from "next/router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { Loader } from "./Loader";
 
 const PDFUploader = () => {
-  const router =  useRouter();
-  const searchParams = useSearchParams()
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      params.set(name, value)
-  
-      return params.toString()
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(name, value);
+
+      return params.toString();
     },
     [searchParams]
-  )
+  );
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const onDrop = useCallback((acceptedFiles: File[]) => {
     console.log(acceptedFiles[0]);
     setSelectedFile(acceptedFiles[0]);
@@ -35,12 +37,20 @@ const PDFUploader = () => {
     maxFiles: 1,
   });
 
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
+
   const uploadPdf = async (event: any) => {
     event.preventDefault();
+    if (isLoading) {
+      return;
+    }
     if (selectedFile === null) {
       alert("Please select a pdf file to upload");
       return;
     }
+    setIsLoading(true);
     const data = new FormData();
     data.set("file", selectedFile);
 
@@ -53,7 +63,8 @@ const PDFUploader = () => {
     console.log(jsonResp);
 
     router.push(
-     "/chatPage" + "?" + createQueryString("fileName", jsonResp.fileName));
+      "/chatPage" + "?" + createQueryString("fileName", jsonResp.fileName)
+    );
   };
 
   return (
@@ -72,10 +83,15 @@ const PDFUploader = () => {
       )}
       <button
         type="button"
-        className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded mt-4"
-        onClick={(event) => uploadPdf(event)}
+        className={`font-semibold py-2 px-4 rounded mt-4 flex items-center justify-center h-12 ${
+          isLoading
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-blue-500 hover:bg-blue-600 text-white"
+        }`}
+        onClick={uploadPdf}
+        disabled={isLoading}
       >
-        Upload
+        {!isLoading ? "Upload" : <Loader />}
       </button>
     </div>
   );

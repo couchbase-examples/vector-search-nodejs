@@ -75,7 +75,7 @@ const ChatPage = () => {
     }
   };
   return (
-    <div className="mx-auto flex flex-col no-scrollbar -mt-2">
+    <div className="flex flex-col no-scrollbar -mt-2">
       <div className="flex justify-between w-full lg:flex-row flex-col sm:space-y-20 lg:space-y-0 p-2">
         {/* Left hand side */}
         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.js">
@@ -134,8 +134,8 @@ const ChatPage = () => {
                           key={index}
                           src={
                             message.role === "assistant"
-                              ? "/images/bot-icon.png"
-                              : "/images/couchbase.svg"
+                              ? "/images/bot.png"
+                              : "/images/user.svg"
                           }
                           alt="profile image"
                           width={message.role === "assistant" ? "35" : "33"}
