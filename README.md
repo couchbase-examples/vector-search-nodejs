@@ -131,3 +131,5 @@ For RAG, we are using Langchain, Couchbase Vector Search & OpenAI. We fetch part
 - #### Run the application locally
 
   `npm run dev`
+  This will run the application at localhost:3000 or other port mentioned in the run logs based on config.
+

@@ -9,7 +9,6 @@ import type {
 import { toolbarPlugin } from "@react-pdf-viewer/toolbar";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import path from "path";
 import Image from "next/image";
 import { useChat } from "ai/react";
 import ReactMarkdown from "react-markdown";
@@ -19,6 +18,9 @@ import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 const ChatPage = () => {
   const [chatOnlyView, setChatOnlyView] = useState(false);
+  const [sourcesForMessages, setSourcesForMessages] = useState<
+    Record<string, any>
+  >({});
   const [error, setError] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
   const toolbarPluginInstance = toolbarPlugin();
@@ -41,18 +43,18 @@ const ChatPage = () => {
       body: {
         chatId: "chatId",
       },
-      // onResponse(response) {
-      // const sourcesHeader = response.headers.get('x-sources');
-      // const sources = sourcesHeader ? JSON.parse(atob(sourcesHeader)) : [];
+      onResponse(response) {
+        const sourcesHeader = response.headers.get("x-sources");
+        const sources = sourcesHeader ? JSON.parse(atob(sourcesHeader)) : [];
 
-      // const messageIndexHeader = response.headers.get('x-message-index');
-      // if (sources.length && messageIndexHeader !== null) {
-      //   setSourcesForMessages({
-      //     ...sourcesForMessages,
-      //     [messageIndexHeader]: sources,
-      //   });
-      // }
-      // },
+        const messageIndexHeader = response.headers.get("x-message-index");
+        if (sources.length && messageIndexHeader !== null) {
+          setSourcesForMessages({
+            ...sourcesForMessages,
+            [messageIndexHeader]: sources,
+          });
+        }
+      },
       onError: (e) => {
         setError(e.message);
       },
@@ -114,7 +116,7 @@ const ChatPage = () => {
                 </div>
               )}
               {messages.map((message, index) => {
-                // const sources = sourcesForMessages[index] || undefined;
+                const sources = sourcesForMessages[index] || undefined;
                 const isLastMessage =
                   !isLoading && index === messages.length - 1;
                 const previousMessages = index !== messages.length - 1;
@@ -147,36 +149,38 @@ const ChatPage = () => {
                           {message.content}
                         </ReactMarkdown>
                       </div>
-                      {/* Display the sources
+
+                      {/* Display the sources */}
                       {(isLastMessage || previousMessages) && sources && (
                         <div className="flex space-x-4 ml-14 mt-3">
                           {sources
                             .filter((source: any, index: number, self: any) => {
                               const pageNumber =
-                                source.metadata['loc.pageNumber'];
+                                source.metadata["loc.pageNumber"];
                               // Check if the current pageNumber is the first occurrence in the array
                               return (
                                 self.findIndex(
                                   (s: any) =>
-                                    s.metadata['loc.pageNumber'] === pageNumber,
+                                    s.metadata["loc.pageNumber"] === pageNumber
                                 ) === index
                               );
                             })
                             .map((source: any) => (
                               <button
+                                key={`${index}`}
                                 className="border bg-gray-200 px-3 py-1 hover:bg-gray-100 transition rounded-lg"
                                 onClick={() =>
                                   pageNavigationPluginInstance.jumpToPage(
-                                    Number(source.metadata['loc.pageNumber']) -
-                                      1,
+                                    Number(source.metadata["loc.pageNumber"]) -
+                                      1
                                   )
                                 }
                               >
-                                p. {source.metadata['loc.pageNumber']}
+                                p. {source.metadata["loc.pageNumber"]}
                               </button>
                             ))}
                         </div>
-                      )} */}
+                      )}
                     </div>
                   </div>
                 );

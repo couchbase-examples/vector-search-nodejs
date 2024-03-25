@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import {
   CouchbaseVectorStore,
   CouchbaseVectorStoreArgs,
@@ -9,15 +8,14 @@ import { Message as VercelChatMessage, StreamingTextResponse } from "ai";
 import { HumanMessage, AIMessage, ChatMessage } from "@langchain/core/messages";
 import {
   RunnableSequence,
-  RunnablePassthrough,
   RunnablePick
 } from "@langchain/core/runnables";
-import { formatDocumentsAsString } from "langchain/util/document";
 import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
-import { ChatPromptTemplate, MessagesPlaceholder } from "langchain/prompts";
+import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
 import { createRetrievalChain } from "langchain/chains/retrieval";
 import { HttpResponseOutputParser } from "langchain/output_parsers";
+import { Document } from '@langchain/core/documents';
 
 const formatVercelMessages = (message: VercelChatMessage) => {
   if (message.role === "user") {
@@ -98,12 +96,24 @@ export async function POST(request: Request) {
       couchbaseConfig
     );
     const userMessage = messages[messages.length - 1].content;
-    console.log(userMessage);
-    const retriever = couchbaseVectorStore.asRetriever();
-    // const searchResult = await couchbaseVectorStore.similaritySearch(
-    //   userMessage,
-    //   1
-    // );
+    let resolveWithDocuments: (value: Document[]) => void;
+    const documentPromise = new Promise<Document[]>((resolve) => {
+      resolveWithDocuments = resolve;
+    });
+
+    const retriever = couchbaseVectorStore.asRetriever({
+      callbacks: [
+        {
+          handleRetrieverEnd(documents) {
+            // Extract retrieved source documents so that they can be displayed as sources
+            // on the frontend.
+            resolveWithDocuments(documents);
+          },
+        },
+      ],
+    }
+    );
+
     const historyAwareRetrieverChain = await createHistoryAwareRetriever({
       llm: model,
       retriever,
@@ -134,16 +144,25 @@ export async function POST(request: Request) {
       input: currentMessageContent,
     });
 
+    const documents = await documentPromise;
+    const serializedSources = Buffer.from(
+      JSON.stringify(
+        documents.map((doc) => {
+          return {
+            pageContent: doc.pageContent.slice(0, 50) + '...',
+            metadata: doc.metadata,
+          };
+        }),
+      ),
+    ).toString('base64');
+
     return new StreamingTextResponse(stream, {
       headers: {
         'x-message-index': (formattedPreviousMessages.length + 1).toString(),
+        'x-sources': serializedSources,
       },
     });
-    // const result = await chain.invoke("What is the powerhouse of the cell?");
-    // console.log(searchResult);
-    // return NextResponse.json({
-    //   reply: searchResult[0].pageContent,
-    // });
+
   } catch (err) {
     console.log("Error Received ", err);
   }

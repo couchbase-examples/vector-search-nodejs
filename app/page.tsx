@@ -1,13 +1,6 @@
-"use client";
-
-import { useCallback, useState } from "react";
 import PDFUploader from "@/components/PDFUploader";
 import { InfoCard } from "@/components/InfoCard";
-import Image from "next/image";
-
-export default function Home({ docsList }: { docsList: any }) {
-  const [loading, setLoading] = useState(false);
-
+export default function Home() {
   return (
     <div className="mx-auto flex flex-col gap-4 container mt-10">
       <InfoCard />
