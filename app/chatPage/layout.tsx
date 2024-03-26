@@ -1,7 +1,7 @@
 "use client";
 import Header from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
 export default function ChatLayout({
   children,
@@ -11,7 +11,7 @@ export default function ChatLayout({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <>
+    <Suspense>
       {isOpen && (
           <Sidebar isOpen />
       )}
@@ -19,6 +19,6 @@ export default function ChatLayout({
         <Header isSidebarOpen={isOpen} setIsSidebarOpen={setIsOpen}/>
         {children}
       </div>
-    </>
+    </Suspense>
   );
 }
