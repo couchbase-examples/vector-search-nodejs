@@ -1,8 +1,6 @@
 "use client";
 
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useRouter, useSearchParams } from "next/navigation";
-import { NextRouter } from "next/router";
 import React, { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Loader } from "./Loader";
@@ -54,17 +52,20 @@ const PDFUploader = () => {
     const data = new FormData();
     data.set("file", selectedFile);
 
-    const response = await fetch("/api/ingestPdf", {
-      method: "POST",
-      body: data,
-    });
+    try {
+      const response = await fetch("/api/ingestPdf", {
+        method: "POST",
+        body: data,
+      });
+      const jsonResp = await response.json();
 
-    const jsonResp = await response.json();
-    console.log(jsonResp);
-
-    router.push(
-      "/chatPage" + "?" + createQueryString("fileName", jsonResp.fileName)
-    );
+      router.push(
+        "/chatPage" + "?" + createQueryString("fileName", jsonResp.fileName)
+      );
+    } catch (error) {
+      console.error(`Error uploading pdf`, error);
+      throw new Error(`Error uploading pdf: ${error}`);
+    }
   };
 
   return (

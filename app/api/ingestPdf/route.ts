@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
-import {CouchbaseVectorStore, CouchbaseVectorStoreArgs} from "@langchain/community/vectorstores/couchbase";
+import {
+  CouchbaseVectorStore,
+  CouchbaseVectorStoreArgs,
+} from "@langchain/community/vectorstores/couchbase";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { createCouchbaseCluster } from "@/lib/couchbase-connection";
 import { writeFile } from "fs/promises";
@@ -10,10 +13,8 @@ import path from "path";
 export async function POST(request: Request) {
   const data = await request.formData();
   const file: File | null = data.get("file") as unknown as File;
-  let fileUInt8Array;
   try {
     const bytes = await file.arrayBuffer();
-    fileUInt8Array = new Uint8Array(bytes);
     const buffer = Buffer.from(bytes);
 
     await writeFile(
@@ -32,29 +33,29 @@ export async function POST(request: Request) {
     const docs = await textSplitter.splitDocuments(rawDocs);
 
     const embeddings = new OpenAIEmbeddings({
-        openAIApiKey: process.env.OPENAI_API_KEY,
+      openAIApiKey: process.env.OPENAI_API_KEY,
     });
-    
+
     const bucketName = process.env.DB_BUCKET || "";
     const scopeName = process.env.DB_SCOPE || "";
     const collectionName = process.env.DB_COLLECTION || "";
-    const indexName = process.env.INDEX_NAME || ""
-    const textKey = "text"
-    const embeddingKey = "embedding"
+    const indexName = process.env.INDEX_NAME || "";
+    const textKey = "text";
+    const embeddingKey = "embedding";
     const scopedIndex = true;
 
     const cluster = await createCouchbaseCluster();
     const couchbaseConfig: CouchbaseVectorStoreArgs = {
-        cluster,
-        bucketName,
-        scopeName,
-        collectionName,
-        indexName,
-        textKey,
-        embeddingKey,
-        scopedIndex
-    }
-    await CouchbaseVectorStore.fromDocuments(docs,embeddings,couchbaseConfig);
+      cluster,
+      bucketName,
+      scopeName,
+      collectionName,
+      indexName,
+      textKey,
+      embeddingKey,
+      scopedIndex,
+    };
+    await CouchbaseVectorStore.fromDocuments(docs, embeddings, couchbaseConfig);
 
     console.log("creating vector store...");
   } catch (error) {
@@ -64,7 +65,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     text: "Successfully embedded pdf",
-    id: "1",
     fileName: file.name,
   });
 }
