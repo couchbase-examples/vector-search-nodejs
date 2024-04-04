@@ -41,8 +41,8 @@ export async function POST(request: Request) {
     .map(formatVercelMessages);
 
   const currentMessageContent = messages[messages.length - 1].content;
-  const model = new ChatOpenAI({});
   try {
+    const model = new ChatOpenAI({});
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       embeddings,
       couchbaseConfig
     );
-    const userMessage = messages[messages.length - 1].content;
+
     let resolveWithDocuments: (value: Document[]) => void;
     const documentPromise = new Promise<Document[]>((resolve) => {
       resolveWithDocuments = resolve;
