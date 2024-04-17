@@ -1,6 +1,8 @@
-## RAG Demo using Couchbase, NextJS, Langchain, and OpenAI
+## RAG Demo using Couchbase, NextJS, LangChain, and OpenAI
 
 This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model.
+
+For the full tutorial, please visit the [Developer Portal](https://developer.couchbase.com/tutorial-nodejs-langchain-pdf-chat).
 
 ![alt text](public/images/demo.png)
 
@@ -10,7 +12,7 @@ You can upload your PDFs with custom data & ask questions about the data in the 
 
 For each question, you will get an answer using RAG (Couchbase logo)
 
-For RAG, we are using Langchain, Couchbase Vector Search & OpenAI. We fetch parts of the PDF relevant to the question using Vector search & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store.
+For RAG, we are using LangChain, Couchbase Vector Search & OpenAI. We fetch parts of the PDF relevant to the question using Vector search & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store.
 
 ### How to Run
 
