@@ -9,6 +9,7 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { createCouchbaseCluster } from "@/lib/couchbase-connection";
 import { writeFile } from "fs/promises";
 import path from "path";
+import { existsSync, mkdirSync } from "fs";
 
 export async function POST(request: Request) {
   const data = await request.formData();
@@ -17,8 +18,14 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    // Create public/assets directory if it doesn't exist
+    if (!existsSync(path.join(process.cwd(), "public/assets"))) {
+      mkdirSync(path.join(process.cwd(), "public/assets"));
+    }
+
+    // Write file to public/assets directory
     await writeFile(
-      path.join(process.cwd(), "public/assets/" + file.name),
+      path.join(process.cwd(), "public/assets", file.name),
       buffer
     );
 
