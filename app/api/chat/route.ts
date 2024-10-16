@@ -4,17 +4,12 @@ import {
 } from "@langchain/community/vectorstores/couchbase";
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { createCouchbaseCluster } from "@/lib/couchbase-connection";
-import { Message as VercelChatMessage, StreamingTextResponse } from "ai";
+import { Message as VercelChatMessage } from "ai";
 import { HumanMessage, AIMessage, ChatMessage } from "@langchain/core/messages";
-import {
-  RunnableSequence,
-  RunnablePick
-} from "@langchain/core/runnables";
 import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
 import { createRetrievalChain } from "langchain/chains/retrieval";
-import { HttpResponseOutputParser } from "langchain/output_parsers";
 import { Document } from '@langchain/core/documents';
 
 const formatVercelMessages = (message: VercelChatMessage) => {
@@ -42,7 +37,9 @@ export async function POST(request: Request) {
 
   const currentMessageContent = messages[messages.length - 1].content;
   try {
-    const model = new ChatOpenAI({});
+    const model = new ChatOpenAI({
+      model: "gpt-4"
+    });
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
@@ -133,19 +130,18 @@ export async function POST(request: Request) {
     });
 
     // "Pick" the answer from the retrieval chain output object and stream it as bytes.
-    const outputChain = RunnableSequence.from([
-      conversationalRetrievalChain,
-      new RunnablePick({ keys: "answer" }),
-      new HttpResponseOutputParser({ contentType: "text/plain" }),
-    ]);
+    const outputChain = conversationalRetrievalChain.pick("answer")
 
     const stream = await outputChain.stream({
       chat_history: formattedPreviousMessages,
       input: currentMessageContent,
     });
+    
 
     const documents = await documentPromise;
-    const serializedSources = Buffer.from(
+    console.log("Documents: ", documents);
+    
+    const serializedSources =  Buffer.from(
       JSON.stringify(
         documents.map((doc) => {
           return {
@@ -156,12 +152,15 @@ export async function POST(request: Request) {
       ),
     ).toString('base64');
 
-    return new StreamingTextResponse(stream, {
+    const byteStream = stream.pipeThrough(new TextEncoderStream());
+
+    return new Response(byteStream, {
       headers: {
         'x-message-index': (formattedPreviousMessages.length + 1).toString(),
         'x-sources': serializedSources,
       },
-    });
+      
+    })
 
   } catch (err) {
     console.log("Error Received ", err);

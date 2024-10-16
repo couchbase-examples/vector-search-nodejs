@@ -17,7 +17,6 @@ import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 const ChatPage = () => {
-  const [chatOnlyView, setChatOnlyView] = useState(false);
   const [sourcesForMessages, setSourcesForMessages] = useState<
     Record<string, any>
   >({});
@@ -82,9 +81,7 @@ const ChatPage = () => {
         {/* Left hand side */}
         <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.js">
           <div
-            className={`w-full h-[90vh] flex-col text-white !important ${
-              chatOnlyView ? "hidden" : "flex"
-            }`}
+            className={`w-full h-[90vh] flex-col text-white !important ${"flex"}`}
           >
             <div
               className="align-center bg-[#eeeeee] flex p-1"
