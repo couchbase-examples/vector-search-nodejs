@@ -125,11 +125,17 @@ export async function POST(request: Request) {
       ],
     });
 
+    // Create the history-aware retriever chain
     const historyAwareRetrieverChain = await createHistoryAwareRetriever({
       llm: model,
       retriever,
       rephrasePrompt: historyAwarePrompt,
     });
+
+    // Use history-aware retriever only when there's chat history
+    const retrieverToUse = formattedPreviousMessages.length > 0 
+      ? historyAwareRetrieverChain 
+      : retriever;
 
     // Create a chain that answers questions using retrieved relevant documents as context.
     const documentChain = await createStuffDocumentsChain({
@@ -138,9 +144,8 @@ export async function POST(request: Request) {
     });
 
     // Create a chain that combines the above retriever and question answering chains.
-    // Skip history-aware retriever for now to debug the issue
     const conversationalRetrievalChain = await createRetrievalChain({
-      retriever: retriever,
+      retriever: retrieverToUse,
       combineDocsChain: documentChain,
     });
 
