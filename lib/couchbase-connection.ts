@@ -1,6 +1,6 @@
 import { connect, Cluster } from "couchbase";
 
-export async function createCouchbaseCluster(): Promise<Cluster> {
+export async function createCouchbaseCluster(): Promise<Cluster | void> {
   const connectionString = process.env.DB_CONN_STR;
   const databaseUsername = process.env.DB_USERNAME;
   const databasePassword = process.env.DB_PASSWORD;
@@ -23,11 +23,16 @@ export async function createCouchbaseCluster(): Promise<Cluster> {
     );
   }
 
-  const cluster = await connect(connectionString, {
-    username: databaseUsername,
-    password: databasePassword,
-    configProfile: "wanDevelopment",
-  });
+  try {
+    return await connect(connectionString, {
+      username: databaseUsername,
+      password: databasePassword,
+      configProfile: "wanDevelopment",
+    });
+  } catch (e) {
+    throw new Error(
+      `Could not connect to the Couchbase cluster. Please check your DB_CONN_STR, DB_USERNAME, and DB_PASSWORD environment variables. \n${e}`,
+    )
+  }
 
-  return cluster;
 }

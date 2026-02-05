@@ -22,7 +22,7 @@ For RAG, we are using LangChain, Couchbase Vector Search & OpenAI. We fetch part
 
 - #### Set the environment secrets
 
-  Copy the `.env.template` file in and rename it to `.env` (`.env.local` in case of local development) and replace the placeholders with the actual values for your environment
+  Copy the `.env.template` file in and rename it to `.env` (`.env.local` in case of local development) and replace the placeholders with the actual values for your environment. **Note: the DB_CONN_STR must start with couchbase:// and should not contain the port number.**
 
   ```
   OPENAI_API_KEY=<open_ai_api_key>

@@ -7,7 +7,7 @@ import type {
   TransformToolbarSlot,
 } from "@react-pdf-viewer/toolbar";
 import { toolbarPlugin } from "@react-pdf-viewer/toolbar";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useChat } from "ai/react";
@@ -16,7 +16,7 @@ import LoadingDots from "@/components/LoadingDots";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
-const ChatPage = () => {
+const ChatContent = ({ searchParams }: { searchParams: URLSearchParams }) => {
   const [sourcesForMessages, setSourcesForMessages] = useState<
     Record<string, any>
   >({});
@@ -25,7 +25,7 @@ const ChatPage = () => {
   const toolbarPluginInstance = toolbarPlugin();
   const pageNavigationPluginInstance = pageNavigationPlugin();
   const { renderDefaultToolbar, Toolbar } = toolbarPluginInstance;
-  const searchParams = useSearchParams();
+
   useEffect(() => {
     setPdfUrl(("/assets/" + searchParams.get("fileName")) as string);
   }, [searchParams]);
@@ -237,4 +237,15 @@ const ChatPage = () => {
   );
 };
 
-export default ChatPage;
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChatPageContentWrapper />
+    </Suspense>
+  );
+}
+
+function ChatPageContentWrapper() {
+  const searchParams = useSearchParams();
+  return <ChatContent searchParams={searchParams} />;
+}

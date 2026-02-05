@@ -1,16 +1,16 @@
 import {
-  CouchbaseVectorStore,
-  CouchbaseVectorStoreArgs,
-} from "@langchain/community/vectorstores/couchbase";
+  CouchbaseSearchVectorStore,
+} from "@langchain/community/vectorstores/couchbase_search";
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { createCouchbaseCluster } from "@/lib/couchbase-connection";
 import { Message as VercelChatMessage } from "ai";
 import { HumanMessage, AIMessage, ChatMessage } from "@langchain/core/messages";
-import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
-import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
-import { createRetrievalChain } from "langchain/chains/retrieval";
+import { createHistoryAwareRetriever } from "@langchain/classic/chains/history_aware_retriever";
+import { createStuffDocumentsChain } from "@langchain/classic/chains/combine_documents";
+import { createRetrievalChain } from "@langchain/classic/chains/retrieval";
 import { Document } from '@langchain/core/documents';
+import {NextResponse} from 'next/server';
 
 const formatVercelMessages = (message: VercelChatMessage) => {
   if (message.role === "user") {
@@ -26,6 +26,12 @@ const formatVercelMessages = (message: VercelChatMessage) => {
 };
 
 export async function POST(request: Request) {
+  // Load environment variables explicitly
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    return NextResponse.json({ error: "OPENAI_API_KEY not set" }, { status: 500 });
+  }
+
   const body = await request.json();
   const messages = body.messages ?? [];
   if (!messages.length) {
@@ -38,10 +44,12 @@ export async function POST(request: Request) {
   const currentMessageContent = messages[messages.length - 1].content;
   try {
     const model = new ChatOpenAI({
-      model: "gpt-4"
+      model: "gpt-4",
+      openAIApiKey: openaiApiKey,
     });
     const embeddings = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
+      apiKey: openaiApiKey,
+      model: "text-embedding-3-small",
     });
 
     const historyAwarePrompt = ChatPromptTemplate.fromMessages([
@@ -78,7 +86,12 @@ export async function POST(request: Request) {
     const scopedIndex = true;
 
     const cluster = await createCouchbaseCluster();
-    const couchbaseConfig: CouchbaseVectorStoreArgs = {
+
+    if (!cluster) {
+      throw new Error("Couchbase cluster connection failed");
+    }
+
+    const couchbaseConfig = {
       cluster,
       bucketName,
       scopeName,
@@ -88,7 +101,7 @@ export async function POST(request: Request) {
       embeddingKey,
       scopedIndex,
     };
-    const couchbaseVectorStore = await CouchbaseVectorStore.initialize(
+    const couchbaseSearchVectorStore = await CouchbaseSearchVectorStore.initialize(
       embeddings,
       couchbaseConfig
     );
@@ -98,7 +111,9 @@ export async function POST(request: Request) {
       resolveWithDocuments = resolve;
     });
 
-    const retriever = couchbaseVectorStore.asRetriever({
+    const retriever = couchbaseSearchVectorStore.asRetriever({
+      searchType: "similarity",
+      searchKwargs: { k: 4 },
       callbacks: [
         {
           handleRetrieverEnd(documents) {
@@ -108,8 +123,7 @@ export async function POST(request: Request) {
           },
         },
       ],
-    }
-    );
+    });
 
     const historyAwareRetrieverChain = await createHistoryAwareRetriever({
       llm: model,
@@ -124,8 +138,9 @@ export async function POST(request: Request) {
     });
 
     // Create a chain that combines the above retriever and question answering chains.
+    // Skip history-aware retriever for now to debug the issue
     const conversationalRetrievalChain = await createRetrievalChain({
-      retriever: historyAwareRetrieverChain,
+      retriever: retriever,
       combineDocsChain: documentChain,
     });
 
@@ -164,5 +179,6 @@ export async function POST(request: Request) {
 
   } catch (err) {
     console.log("Error Received ", err);
+    return NextResponse.json({ error: "Failed to process chat message" });
   }
 }
