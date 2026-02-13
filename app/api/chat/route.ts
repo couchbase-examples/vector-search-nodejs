@@ -113,7 +113,7 @@ export async function POST(request: Request) {
 
     const retriever = couchbaseSearchVectorStore.asRetriever({
       searchType: "similarity",
-      searchKwargs: { k: 4 },
+      k: 4,
       callbacks: [
         {
           handleRetrieverEnd(documents) {
