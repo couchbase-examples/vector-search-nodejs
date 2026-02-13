@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import {
-  CouchbaseVectorStore,
-  CouchbaseVectorStoreArgs,
-} from "@langchain/community/vectorstores/couchbase";
+  CouchbaseSearchVectorStore, CouchbaseSearchVectorStoreArgs,
+} from "@langchain/community/vectorstores/couchbase_search";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { createCouchbaseCluster } from "@/lib/couchbase-connection";
 import { writeFile } from "fs/promises";
@@ -52,7 +51,12 @@ export async function POST(request: Request) {
     const scopedIndex = true;
 
     const cluster = await createCouchbaseCluster();
-    const couchbaseConfig: CouchbaseVectorStoreArgs = {
+
+    if (!cluster) {
+      throw new Error("Couchbase cluster connection failed");
+    }
+
+    const couchbaseConfig: CouchbaseSearchVectorStoreArgs = {
       cluster,
       bucketName,
       scopeName,
@@ -62,7 +66,7 @@ export async function POST(request: Request) {
       embeddingKey,
       scopedIndex,
     };
-    await CouchbaseVectorStore.fromDocuments(docs, embeddings, couchbaseConfig);
+    await CouchbaseSearchVectorStore.fromDocuments(docs, embeddings, couchbaseConfig);
 
     console.log("creating vector store...");
   } catch (error) {

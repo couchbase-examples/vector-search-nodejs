@@ -1,13 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, Suspense } from "react";
 import { useDropzone } from "react-dropzone";
 import { Loader } from "./Loader";
 
-const PDFUploader = () => {
+const PDFUploaderContent = ({ searchParams }: { searchParams: URLSearchParams }) => {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const createQueryString = useCallback(
     (name: string, value: string) => {
@@ -98,4 +97,15 @@ const PDFUploader = () => {
   );
 };
 
-export default PDFUploader;
+export default function PDFUploader() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PDFUploaderWrapper />
+    </Suspense>
+  );
+}
+
+function PDFUploaderWrapper() {
+  const searchParams = useSearchParams();
+  return <PDFUploaderContent searchParams={searchParams} />;
+}
