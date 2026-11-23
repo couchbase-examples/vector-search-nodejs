@@ -1,8 +1,5 @@
-import {
-  CouchbaseSearchVectorStore,
-} from "@langchain/community/vectorstores/couchbase_search";
-import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
-import { createCouchbaseCluster } from "@/lib/couchbase-connection";
+import { ChatOpenAI } from "@langchain/openai";
+import { getVectorStore } from "@/lib/vector-store";
 import { Message as VercelChatMessage } from "ai";
 import { HumanMessage, AIMessage, ChatMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
@@ -47,10 +44,6 @@ export async function POST(request: Request) {
       model: "gpt-4",
       openAIApiKey: openaiApiKey,
     });
-    const embeddings = new OpenAIEmbeddings({
-      apiKey: openaiApiKey,
-      model: "text-embedding-3-small",
-    });
 
     const historyAwarePrompt = ChatPromptTemplate.fromMessages([
       new MessagesPlaceholder("chat_history"),
@@ -77,34 +70,7 @@ export async function POST(request: Request) {
       ["user", "{input}"],
     ]);
 
-    const bucketName = process.env.DB_BUCKET || "";
-    const scopeName = process.env.DB_SCOPE || "";
-    const collectionName = process.env.DB_COLLECTION || "";
-    const indexName = process.env.INDEX_NAME || "";
-    const textKey = "text";
-    const embeddingKey = "embedding";
-    const scopedIndex = true;
-
-    const cluster = await createCouchbaseCluster();
-
-    if (!cluster) {
-      throw new Error("Couchbase cluster connection failed");
-    }
-
-    const couchbaseConfig = {
-      cluster,
-      bucketName,
-      scopeName,
-      collectionName,
-      indexName,
-      textKey,
-      embeddingKey,
-      scopedIndex,
-    };
-    const couchbaseSearchVectorStore = await CouchbaseSearchVectorStore.initialize(
-      embeddings,
-      couchbaseConfig
-    );
+    const couchbaseSearchVectorStore = await getVectorStore();
 
     let resolveWithDocuments: (value: Document[]) => void;
     const documentPromise = new Promise<Document[]>((resolve) => {
