@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
-import {
-  CouchbaseSearchVectorStore, CouchbaseSearchVectorStoreArgs,
-} from "@langchain/community/vectorstores/couchbase_search";
-import { OpenAIEmbeddings } from "@langchain/openai";
-import { createCouchbaseCluster } from "@/lib/couchbase-connection";
+import { getVectorStore } from "@/lib/vector-store";
 import { writeFile } from "fs/promises";
 import path from "path";
 import { existsSync, mkdirSync } from "fs";
@@ -38,35 +34,8 @@ export async function POST(request: Request) {
     });
     const docs = await textSplitter.splitDocuments(rawDocs);
 
-    const embeddings = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-    });
-
-    const bucketName = process.env.DB_BUCKET || "";
-    const scopeName = process.env.DB_SCOPE || "";
-    const collectionName = process.env.DB_COLLECTION || "";
-    const indexName = process.env.INDEX_NAME || "";
-    const textKey = "text";
-    const embeddingKey = "embedding";
-    const scopedIndex = true;
-
-    const cluster = await createCouchbaseCluster();
-
-    if (!cluster) {
-      throw new Error("Couchbase cluster connection failed");
-    }
-
-    const couchbaseConfig: CouchbaseSearchVectorStoreArgs = {
-      cluster,
-      bucketName,
-      scopeName,
-      collectionName,
-      indexName,
-      textKey,
-      embeddingKey,
-      scopedIndex,
-    };
-    await CouchbaseSearchVectorStore.fromDocuments(docs, embeddings, couchbaseConfig);
+    const vectorStore = await getVectorStore();
+    await vectorStore.addDocuments(docs);
 
     console.log("creating vector store...");
   } catch (error) {
